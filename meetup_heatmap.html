@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script type="text/javascript">
+      function median(values) {
+        values.sort( function(a,b) {return a - b;} );
+        var half = Math.floor(values.length/2);
+       
+        if(values.length % 2)
+          return values[half];
+        else
+          return (values[half-1] + values[half]) / 2.0;
+      }
+    </script>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-th8duGa9BieaEGRE8qCzfEMrtSUCqXY&libraries=visualization&sensor=false">
+    </script>
+    <script type="text/javascript">
+      //Temporary static variables used to test map functionality. Should be made into true variables.
+      var apikey = '5569441f463149423a357d745a1d3f4b';
+      var groupName = 'sfnewtech';
+      var pageResults = 50000;
+      var meetupAPIurl = 'https://api.meetup.com/2/members?key='+apikey+'&sign=true&group_urlname='+groupName+'&page='+pageResults+"&callback=?";
+
+      // Empty array to store LatLng objects
+      var lats = [];
+      var lons = [];
+      var heatmapBase = [];
+      var medLat = null;
+      var medLon = null;
+      var center = null;
+
+      //Gets the lat and long of each group member and makes an array of Google LatLng objects
+      $.getJSON(meetupAPIurl, function(data) {
+          var results = data['results'];
+          //Need to figure out why only 200 results are being returned
+          for (var i = 0; i < results.length; i++){
+            var lat = results[i]['lat'];
+            var lon = results[i]['lon'];
+
+            var latlon = new google.maps.LatLng(lat,lon);
+            heatmapBase.push(latlon);
+            lats.push(lat);
+            lons.push(lon);
+          }
+          //Testing call to see length of heatmap array
+          console.log(heatmapBase);
+          //Calculate and store median lat and lon
+          medLat = median(lats);
+          medLon = median(lons);
+        });
+
+      
+
+
+      //Creates the map
+      function initialize() {
+
+        var heatmapData = heatmapBase;
+        var sanFrancisco = new google.maps.LatLng(37.774546, -122.433523);
+        center = new google.maps.LatLng(medLat, medLon);
+
+        map = new google.maps.Map(document.getElementById('map_canvas'), {
+          center: center,
+          zoom: 13,
+          mapTypeId: google.maps.MapTypeId.SATELLITE
+        });
+
+        var heatmap = new google.maps.visualization.HeatmapLayer({
+          data: heatmapData
+        });
+
+        var mapOptions = {disableDefaultUI: false, draggable: true};
+
+        //need to define mapOptions!
+        heatmap.setMap(map);
+        var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+      }
+    </script>
+  </head>
+  <body onload="initialize()">
+    <div id="map_canvas" style="width:100%; height:100%"></div>
+  </body>
+</html>
