@@ -2,92 +2,126 @@
 <html>
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-    <style type="text/css">
-      html { height: 100% }
-      body { height: 100%; margin: 0; padding: 0 }
-      #map_canvas { height: 100% }
-    </style>
+
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-th8duGa9BieaEGRE8qCzfEMrtSUCqXY&libraries=visualization&sensor=false"></script>
+
     <script type="text/javascript">
+      // request variables -- API key should be changed/removed
+      apikey = '5569441f463149423a357d745a1d3f4b';
+      pageResults = 5000;
+
+      //
+      function make_map(groupString){
+        // Initialize arrays for later pushing
+        var lats = [];
+        var lons = [];
+        var heatmapData = [];
+
+        // Assembles the API query URL
+        var meetupAPIurl = 'https://api.meetup.com/2/members?key='+apikey+'&sign=true&group_urlname='+groupString+'&page='+pageResults+"&callback=?";
+
+        //Makes the API request and stores each member's lat and lon in the lats/lons arrays
+        $.getJSON(meetupAPIurl, function(data) {
+          var results = data['results'];
+
+          //for each member in the group's results, store their latitude and logitude individually and as a combined LatLng object
+          //FIGURE OUT WHY ONLY 200 RESULT RETURNED
+          for (var i = 0; i < results.length; i++){
+            var lat = results[i]['lat'];
+            var lon = results[i]['lon'];
+
+            var latlon = new google.maps.LatLng(lat,lon);
+            heatmapData.push(latlon);
+            lats.push(lat);
+            lons.push(lon);
+          }
+
+          //Calculate median lat and lon and use to generate map center
+          var medLat = median(lats);
+          var medLon = median(lons);
+          var center = new google.maps.LatLng(medLat, medLon);
+
+          //Generate map centered at the calculated lat/lon
+          map = new google.maps.Map(document.getElementById('map_canvas'), {
+            center: center,
+            zoom: 11,
+            mapTypeId: google.maps.MapTypeId.SATELLITE
+          });
+
+          //Generate heatmap with intensity based on number of members and overlay on map
+          var numMembers = results.length;
+
+          var heatmap = new google.maps.visualization.HeatmapLayer({
+            data: heatmapData,
+            opacity: 1.0,
+            radius: 20,
+            maxIntensity: numMembers/10,
+            dissipating: true
+          });
+          heatmap.setMap(map);
+        });
+      }
+
+      // Mathematical helper function used for calculating medians lat and lon
       function median(values) {
         values.sort( function(a,b) {return a - b;} );
         var half = Math.floor(values.length/2);
-       
+
         if(values.length % 2)
           return values[half];
         else
           return (values[half-1] + values[half]) / 2.0;
       }
     </script>
-    <script type="text/javascript"
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-th8duGa9BieaEGRE8qCzfEMrtSUCqXY&libraries=visualization&sensor=false">
+
+    <script type='text/javascript'>
+      $(document).ready(function(){
+        //function that generates a new member heatmap when a group name is entered in the form field
+        $('#member-search').on('submit', function(event){
+          event.preventDefault();
+          var group = $('#member-search input').val();
+          make_map(group);
+          console.log('heyo');
+          heatmapBase = [];
+        })
+      });
     </script>
-    <script type="text/javascript">
-      //Temporary static variables used to test map functionality. Should be made into true variables.
-      var apikey = '5569441f463149423a357d745a1d3f4b';
-      var groupName = 'anchorage-womens-lacrosse';
-      var pageResults = 50000;
-      var meetupAPIurl = 'https://api.meetup.com/2/members?key='+apikey+'&sign=true&group_urlname='+groupName+'&page='+pageResults+"&callback=?";
 
-      // Empty array to store LatLng objects
-      var lats = [];
-      var lons = [];
-      var heatmapBase = [];
-      var medLat = null;
-      var medLon = null;
-      var center = null;
-      var numMembers = null;
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
 
-      //Gets the lat and long of each group member and makes an array of Google LatLng objects
-      $.getJSON(meetupAPIurl, function(data) {
-          var results = data['results'];
-          //Need to figure out why only 200 results are being returned
-          for (var i = 0; i < results.length; i++){
-            var lat = results[i]['lat'];
-            var lon = results[i]['lon'];
-
-            var latlon = new google.maps.LatLng(lat,lon);
-            heatmapBase.push(latlon);
-            lats.push(lat);
-            lons.push(lon);
-          }
-          //Testing call to see length of heatmap array
-          console.log(heatmapBase);
-          //Calculate and store median lat and lon
-          medLat = median(lats);
-          medLon = median(lons);
-          numMembers = results.length;
-        });
-
-      
-
-
-      //Creates the map
-      function initialize() {
-
-        var heatmapData = heatmapBase;
-        center = new google.maps.LatLng(medLat, medLon);
-
-        map = new google.maps.Map(document.getElementById('map_canvas'), {
-          center: center,
-          zoom: 11,
-          mapTypeId: google.maps.MapTypeId.SATELLITE
-        });
-
-        var heatmap = new google.maps.visualization.HeatmapLayer({
-          data: heatmapData,
-          opacity: 1.0,
-          radius: 20,
-          maxIntensity: numMembers/10,
-          dissipating: true
-        });
-
-        heatmap.setMap(map);
+    <style>
+      body {
+        background: #edefec;
       }
-    </script>
+      #member-search {
+        text-align: center;
+        margin: 0 auto;
+        -moz-box-shadow: 2px 2px 3px #333;
+        -ms-box-shadow: 2px 2px 3px #333;
+        -webkit-box-shadow: 2px 2px 3px #333;
+        box-shadow: 2px 2px 3px #333;
+        background-color: #e51837;
+        position: relative;
+        z-index: 10;
+      }
+      #member-search input {
+        margin: 0.5em 0;
+        width: 300px;
+        font-size: 1.5em;
+        text-align: center;
+      }
+    </style>
   </head>
-  <body onload="initialize()">
-    
+
+  <body>
+    <form id='member-search'>
+      <input type='text' placeholder='Enter group name'></input>
+    </form>
     <div id="map_canvas" style="width:100%; height:100%"></div>
   </body>
 </html>
