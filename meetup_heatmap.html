@@ -43,7 +43,7 @@
           var center = new google.maps.LatLng(medLat, medLon);
 
           //Generate map centered at the calculated lat/lon
-          map = new google.maps.Map(document.getElementById('map_canvas'), {
+          map = new google.maps.Map(document.getElementById('map-canvas'), {
             center: center,
             zoom: 11,
             mapTypeId: google.maps.MapTypeId.SATELLITE
@@ -80,48 +80,85 @@
         //function that generates a new member heatmap when a group name is entered in the form field
         $('#member-search').on('submit', function(event){
           event.preventDefault();
-          var group = $('#member-search input').val();
+          //gets string from form input and removes spaces from group name and replaces with dashes as they are written in queries
+          var group = $('#member-search input').val().replace(/\s+/g, '-');
           make_map(group);
-          console.log('heyo');
           heatmapBase = [];
         })
       });
     </script>
 
-    <style type="text/css">
-      html { height: 100% }
-      body { height: 100%; margin: 0; padding: 0 }
-      #map_canvas { height: 100% }
-    </style>
-
     <style>
+      * {
+        font-family: verdana, Arial, sans-serif;
+      }
+      html {
+        height: 100%;
+      }
       body {
         background: #edefec;
+        position: relative;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
       }
-      #member-search {
-        text-align: center;
-        margin: 0 auto;
+      header {
         -moz-box-shadow: 2px 2px 3px #333;
         -ms-box-shadow: 2px 2px 3px #333;
         -webkit-box-shadow: 2px 2px 3px #333;
         box-shadow: 2px 2px 3px #333;
         background-color: #e51837;
-        position: relative;
+        position: absolute;
+        top: 0;
+        width: 100%;
         z-index: 10;
+        padding: 0.5em 0;
+      }
+      #member-search {
+        margin: 0 auto;
+        width: 300px;
       }
       #member-search input {
-        margin: 0.5em 0;
-        width: 300px;
+        margin: 0;
+        padding: 0;
+        display: block;
+        width: inherit;
         font-size: 1.5em;
         text-align: center;
+      }
+      #container {
+        height: 100%;
+        width: 100%;
+        padding-top: 3em;
+      }
+      #map-canvas{
+        height: 100%;
+        width: 100%;
+      }
+      footer {
+        position: absolute;
+        bottom: 0;
+        opacity: 0.4;
+        background: #ccc;
+      }
+      #credit {
+        margin:0 1em;
       }
     </style>
   </head>
 
   <body>
-    <form id='member-search'>
-      <input type='text' placeholder='Enter group name'></input>
-    </form>
-    <div id="map_canvas" style="width:100%; height:100%"></div>
+    <header>
+      <form id='member-search'>
+        <input type='text' placeholder='Enter group name'></input>
+      </form>
+    </header>
+    <div id='container'>
+      <div id="map-canvas"></div>
+    </div>
+    <footer>
+      <span id='credit'>O'SheAriey 2012</span>
+    </footer>
   </body>
 </html>
